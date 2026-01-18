@@ -1,1 +1,232 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <meta name="description" content="{{ description }}">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="{{ colors.primary }}">
+    <style>
+        :root {
+            --primary: {{ colors.primary }};
+            --secondary: {{ colors.secondary }};
+            --success: {{ colors.success }};
+            --danger: {{ colors.danger }};
+            --warning: {{ colors.warning }};
+            --info: {{ colors.info }};
+            --dark: {{ colors.dark }};
+            --light: {{ colors.light }};
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-effect-1"></div>
+    <div class="bg-effect-2"></div>
+    <div class="bg-effect-3"></div>
+    
+    <!-- Header -->
+    <header class="glass-container mt-4 mx-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-{{ colors.primary }} to-{{ colors.secondary }} flex items-center justify-center">
+                    <i class="fas fa-coins text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">{{ title }}</h1>
+                    <p class="text-gray-300 text-sm">{{ description }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden md:block">
+                    <div class="font-bold user-name">Loading...</div>
+                    <div class="text-green-400 font-bold user-balance">৳0.00</div>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-user"></i>
+                </div>
+                <button id="themeToggle" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div id="mainContent" class="glass-container">
+            <!-- Content loaded dynamically by JavaScript -->
+            <div class="text-center py-12">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+                <p class="mt-4 text-gray-300">Loading dashboard...</p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Navigation -->
+    <nav class="glass-nav">
+        <button class="nav-btn active" data-page="dashboard">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-page="earn">
+            <i class="fas fa-play-circle"></i>
+            <span>Earn</span>
+        </button>
+        <button class="nav-btn" data-page="referrals">
+            <i class="fas fa-users"></i>
+            <span>Referrals</span>
+        </button>
+        <button class="nav-btn" data-page="withdraw">
+            <i class="fas fa-wallet"></i>
+            <span>Withdraw</span>
+        </button>
+        <button class="nav-btn" data-page="history">
+            <i class="fas fa-history"></i>
+            <span>History</span>
+        </button>
+        <button class="nav-btn" data-page="support">
+            <i class="fas fa-question-circle"></i>
+            <span>Support</span>
+        </button>
+    </nav>
+    
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    
+    <script>
+        // Add background effects
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.querySelector('body');
+            
+            // Create background effects
+            for (let i = 1; i <= 3; i++) {
+                const effect = document.createElement('div');
+                effect.className = `bg-effect bg-effect-${i}`;
+                body.appendChild(effect);
+            }
+            
+            // Add styles for effects
+            const style = document.createElement('style');
+            style.textContent = `
+                .bg-effect {
+                    position: fixed;
+                    border-radius: 50%;
+                    filter: blur(40px);
+                    opacity: 0.3;
+                    z-index: -1;
+                }
+                .bg-effect-1 {
+                    width: 300px;
+                    height: 300px;
+                    background: var(--primary);
+                    top: -150px;
+                    right: -150px;
+                }
+                .bg-effect-2 {
+                    width: 400px;
+                    height: 400px;
+                    background: var(--secondary);
+                    bottom: -200px;
+                    left: -200px;
+                }
+                .bg-effect-3 {
+                    width: 200px;
+                    height: 200px;
+                    background: var(--success);
+                    top: 50%;
+                    left: 10%;
+                }
+                
+                .notification {
+                    position: relative;
+                    background: var(--glass-bg);
+                    backdrop-filter: var(--blur);
+                    border: 1px solid var(--glass-border);
+                    border-radius: 10px;
+                    padding: 1rem;
+                    min-width: 300px;
+                    animation: slideIn 0.3s ease-out;
+                }
+                
+                .notification-success {
+                    border-left: 4px solid var(--success);
+                }
+                
+                .notification-error {
+                    border-left: 4px solid var(--danger);
+                }
+                
+                .notification-warning {
+                    border-left: 4px solid var(--warning);
+                }
+                
+                .notification-info {
+                    border-left: 4px solid var(--info);
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                .fade-out {
+                    animation: fadeOut 0.3s ease-out forwards;
+                }
+                
+                @keyframes fadeOut {
+                    from {
+                        opacity: 1;
+                    }
+                    to {
+                        opacity: 0;
+                    }
+                }
+                
+                /* Loading animation for buttons */
+                .btn-loading {
+                    position: relative;
+                    color: transparent;
+                }
+                
+                .btn-loading::after {
+                    content: '';
+                    position: absolute;
+                    width: 20px;
+                    height: 20px;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    border-top-color: white;
+                    animation: spin 1s linear infinite;
+                    left: calc(50% - 10px);
+                    top: calc(50% - 10px);
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
