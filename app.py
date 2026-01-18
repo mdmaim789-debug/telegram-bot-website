@@ -43,8 +43,8 @@ class Config:
     """Configuration settings for the bot"""
     
     # Bot settings
-    BOT_TOKEN = os.getenv("BOT_TOKEN", "8502536019:AAFcuwfD_tDnlMGNwP0jQapNsakJIRjaSfc")
-    ADMIN_IDS = json.loads(os.getenv("ADMIN_IDS", "[633765043,6375918223]"))
+    BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+    ADMIN_IDS = json.loads(os.getenv("ADMIN_IDS", "[]"))
     WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
     PORT = int(os.getenv("PORT", 8080))
     
@@ -562,19 +562,86 @@ def run_web():
         debug=os.getenv('DEBUG', 'False').lower() == 'true'
     )
 
+# ==================== RUN BOT & WEB SERVER ====================
+async def main():
+    """Main function to run bot and web server properly"""
+    # 1. Bot Setup
+    if not Config.BOT_TOKEN:
+        logging.error("BOT_TOKEN missing!")
+        return
+
+    application = ApplicationBuilder().token(Config.BOT_TOKEN).build()
+    
+    # Add Handlers
+    bot = TelegramBot()
+    application.add_handler(CommandHandler("start", bot.start))
+    # আপনার অন্যান্য হ্যান্ডলারগুলো এখানে অ্যাড করুন...
+    # application.add_handler(CallbackQueryHandler(...))
+
+    # 2. Webhook vs Polling Setup based on Environment
+    if Config.WEBHOOK_URL:
+        # Render বা প্রোডাকশন এনভায়রনমেন্টের জন্য Webhook
+        PORT = int(os.environ.get("PORT", 8080))
+        logging.info(f"Starting Webhook on Port {PORT}")
+        
+        # Webhook সেটআপ
+        await application.bot.set_webhook(url=f"{Config.WEBHOOK_URL}/{Config.BOT_TOKEN}")
+        
+        # Flask অ্যাপ আপডেট (Telegram আপডেট রিসিভ করার জন্য)
+        @flask_app.route(f'/{Config.BOT_TOKEN}', methods=['POST'])
+        async def telegram_webhook():
+            update = Update.de_json(request.get_json(force=True), application.bot)
+            await application.update_queue.put(update)
+            return 'OK'
+
+        # Flask এবং Bot একসাথে রান করা
+        # নোট: Render এ Gunicorn ব্যবহার করলে এই অংশটি ভিন্ন হতে পারে, 
+        # তবে সাধারণ python app.py কমান্ডের জন্য:
+        
+        from threading import Thread
+        
+        # Flask Thread
+        flask_thread = Thread(target=lambda: flask_app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False))
+        flask_thread.start()
+        
+        # Bot Loop
+        async with application:
+            await application.start()
+            # এখানে আমরা polling কল করব না, কারণ webhook ডাটা পুশ করবে
+            # শুধু অ্যাপ্লিকেশন রানিং রাখতে হবে
+            while True:
+                await asyncio.sleep(3600)  # Keep alive
+
+    else:
+        # লোকাল পিসির জন্য Polling (Testing)
+        logging.info("Starting Polling (Local Mode)")
+        
+        # Flask Thread Start
+        from threading import Thread
+        flask_thread = Thread(target=lambda: flask_app.run(host="0.0.0.0", port=Config.PORT, debug=True, use_reloader=False))
+        flask_thread.start()
+
+        # Bot Polling
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        
+        # Keep alive check
+        while True:
+            await asyncio.sleep(1)
+
 if __name__ == "__main__":
-    # Configure logging
+    # Logging Config
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    # Run both bot and web server
-    import threading
-    
-    # Start web server in a thread
-    web_thread = threading.Thread(target=run_web, daemon=True)
-    web_thread.start()
-    
-    # Run bot in main thread
-    asyncio.run(run_bot())
+    # লুপ এরর ফিক্স করার জন্য
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    loop.run_until_complete(main())
