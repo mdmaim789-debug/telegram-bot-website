@@ -43,8 +43,8 @@ class Config:
     """Configuration settings for the bot"""
     
     # Bot settings
-    BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-    ADMIN_IDS = json.loads(os.getenv("ADMIN_IDS", "[]"))
+    BOT_TOKEN = os.getenv("BOT_TOKEN", "8502536019:AAFcuwfD_tDnlMGNwP0jQapNsakJIRjaSfc")
+    ADMIN_IDS = json.loads(os.getenv("ADMIN_IDS", "[633765043,6375918223]"))
     WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
     PORT = int(os.getenv("PORT", 8080))
     
