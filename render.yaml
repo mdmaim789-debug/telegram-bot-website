@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: telegram-bot-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:flask_app
+    envVars:
+      - key: BOT_TOKEN
+        sync: false  # <-- এটা false রাখবেন, Render এর UI থেকে value বসাবেন
+      - key: ADMIN_IDS
+        value: "[633765043, 6375918223]"  # <-- এখানে Admin ID গুলো বসাবেন
+      - key: PORT
+        value: 8080
+      - key: DEBUG
+        value: false
